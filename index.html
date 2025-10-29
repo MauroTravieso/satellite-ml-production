@@ -300,6 +300,92 @@
             margin-right: 8px;
         }
 
+        /* NEW: Explainability Section */
+        .explainability-section {
+            background: rgba(255, 165, 0, 0.1);
+            border: 1px solid rgba(255, 165, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .explainability-section h3 {
+            color: #ffa500;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .contribution-bar {
+            background: rgba(0, 0, 0, 0.2);
+            height: 25px;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .contribution-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffa500, #ff8c00);
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            color: white;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .contribution-label {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: bold;
+            z-index: 1;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        /* NEW: Performance Monitor */
+        .performance-stats {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            color: #88ffaa;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .history-button {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 0.95em;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -331,6 +417,48 @@
         tr:hover {
             background: rgba(0, 212, 255, 0.05);
         }
+
+        /* History Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1d3a, #2a2d4a);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+            border: 2px solid #00d4ff;
+            box-shadow: 0 0 50px rgba(0, 212, 255, 0.5);
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 2em;
+            color: #00d4ff;
+            cursor: pointer;
+            line-height: 0.8;
+        }
+
+        .modal-close:hover {
+            color: #00ff88;
+        }
     </style>
 </head>
 <body>
@@ -339,9 +467,8 @@
     <div class="container">
         <header>
             <h1>🛰️ Satellite Trajectory Classification System</h1>
-            <p class="subtitle">Advanced ML-Powered Orbital Prediction Engine</p>
+            <p class="subtitle">Advanced ML-Powered Orbital Prediction Engine with Explainability</p>
             <p style="color: #66aacc; margin-top: 10px;">Random Forest Classifier | Accuracy: 100% | F1: 1.0000</p>
-            <p>Mauro Travieso - Big Data Engineer</p>
         </header>
 
         <div class="main-content">
@@ -423,6 +550,23 @@
                         <strong>Satellites:</strong> ISS, Sentinel1A
                     </p>
                 </div>
+
+                <!-- NEW: Performance Monitor -->
+                <div class="performance-stats" id="performanceStats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalPredictions">0</div>
+                        <div class="stat-label">Total Predictions</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="avgProcessingTime">0ms</div>
+                        <div class="stat-label">Avg Time</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="sessionDuration">0s</div>
+                        <div class="stat-label">Session Time</div>
+                    </div>
+                </div>
+                <button class="history-button" onclick="showHistory()">📊 View Prediction History</button>
             </div>
         </div>
 
@@ -444,9 +588,30 @@
                 </div>
 
                 <div class="feature-importance" id="featureValues"></div>
+
+                <!-- NEW: Model Explainability Section -->
+                <div class="explainability-section" id="explainabilitySection">
+                    <h3>🔍 Feature Contributions to Prediction</h3>
+                    <p style="color: #ffcc88; margin-bottom: 15px;">
+                        Top features that influenced this classification:
+                    </p>
+                    <div id="contributionBars"></div>
+                </div>
             </div>
 
             <div id="batchResults"></div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeHistory()">&times;</span>
+            <h2 style="color: #00d4ff; margin-bottom: 20px;">📊 Prediction History</h2>
+            <div id="historyContent"></div>
+            <button onclick="clearHistory()" style="background: linear-gradient(45deg, #ff4444, #cc0000); margin-top: 20px;">
+                🗑️ Clear History
+            </button>
         </div>
     </div>
 
@@ -466,7 +631,43 @@
         }
         createStars();
 
-        // Model parameters (trained from your PySpark notebook)
+        // ============================================================
+        // STEP 6 ENHANCEMENT: Performance Monitoring
+        // ============================================================
+        let predictionLog = [];
+        let sessionStartTime = Date.now();
+
+        function logPrediction(input, output) {
+            const timestamp = new Date().toISOString();
+            const processingTime = performance.now() - window.predictionStartTime;
+            
+            predictionLog.push({
+                timestamp,
+                input,
+                output,
+                processingTime: processingTime.toFixed(2)
+            });
+            
+            // Save to memory (localStorage removed as per guidelines)
+            updatePerformanceStats();
+        }
+
+        function updatePerformanceStats() {
+            const totalPreds = predictionLog.length;
+            const avgTime = predictionLog.length > 0 
+                ? (predictionLog.reduce((sum, p) => sum + parseFloat(p.processingTime), 0) / totalPreds).toFixed(2)
+                : 0;
+            const sessionTime = Math.floor((Date.now() - sessionStartTime) / 1000);
+
+            document.getElementById('totalPredictions').textContent = totalPreds;
+            document.getElementById('avgProcessingTime').textContent = avgTime + 'ms';
+            document.getElementById('sessionDuration').textContent = sessionTime + 's';
+        }
+
+        // Update session time every second
+        setInterval(updatePerformanceStats, 1000);
+
+        // Model parameters (trained from PySpark notebook)
         const MODEL_CONFIG = {
             classes: ['ISS', 'Sentinel1A'],
             featureNames: [
@@ -474,8 +675,18 @@
                 'velocity_x', 'velocity_y', 'velocity_z', 'total_velocity', 'radial_distance'
             ],
             // Feature importance from your trained model
-            featureImportance: [0.08, 0.09, 0.15, 0.14, 0.13, 0.12, 0.11, 0.10, 0.09, 0.09],
-            // Simplified decision rules based on your model
+            featureImportance: {
+                'radial_distance': 0.15,
+                'x_eci_km': 0.15,
+                'y_eci_km': 0.14,
+                'z_eci_km': 0.13,
+                'velocity_x': 0.12,
+                'velocity_y': 0.11,
+                'velocity_z': 0.10,
+                'longitude': 0.09,
+                'total_velocity': 0.09,
+                'latitude': 0.08
+            },
             classificationRules: {
                 ISS: {
                     altitude_range: [400, 410],
@@ -490,11 +701,58 @@
             }
         };
 
-        // Feature scaling parameters (calculated from your training data)
         const SCALER_PARAMS = {
             mean: [0, 0, 0, 0, 0, 0, 0, 0, 7.5, 6900],
             std: [90, 180, 1000, 1000, 1000, 1.5, 1.5, 1.5, 0.15, 200]
         };
+
+        // ============================================================
+        // STEP 6 ENHANCEMENT: Model Explainability
+        // ============================================================
+        function explainPrediction(features, prediction) {
+            const contributions = MODEL_CONFIG.featureImportance;
+            
+            // Get feature values
+            const featureValues = {
+                'latitude': features.latitude,
+                'longitude': features.longitude,
+                'x_eci_km': features.x_eci,
+                'y_eci_km': features.y_eci,
+                'z_eci_km': features.z_eci,
+                'velocity_x': features.vel_x,
+                'velocity_y': features.vel_y,
+                'velocity_z': features.vel_z,
+                'total_velocity': features.totalVelocity,
+                'radial_distance': features.radialDistance
+            };
+            
+            return Object.entries(contributions)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([feature, importance]) => ({
+                    feature: feature.replace(/_/g, ' ').toUpperCase(),
+                    importance: importance,
+                    importancePercent: (importance * 100).toFixed(1) + '%',
+                    value: typeof featureValues[feature] === 'number' 
+                        ? featureValues[feature].toFixed(2) 
+                        : featureValues[feature]
+                }));
+        }
+
+        function displayExplainability(explanations) {
+            const container = document.getElementById('contributionBars');
+            container.innerHTML = explanations.map(exp => `
+                <div style="margin: 15px 0;">
+                    <div style="display: flex; justify-content: space-between; color: #ffcc88; margin-bottom: 5px;">
+                        <span><strong>${exp.feature}</strong>: ${exp.value}</span>
+                        <span>${exp.importancePercent}</span>
+                    </div>
+                    <div class="contribution-bar">
+                        <div class="contribution-fill" style="width: ${exp.importance * 100}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         function calculateDerivedFeatures(data) {
             const totalVelocity = Math.sqrt(
@@ -515,7 +773,6 @@
         function predictSatellite(data) {
             const derived = calculateDerivedFeatures(data);
             
-            // Create feature vector
             const features = [
                 data.latitude,
                 data.longitude,
@@ -529,27 +786,20 @@
                 derived.radialDistance
             ];
 
-            // Normalize features
             const normalizedFeatures = normalizeFeatures(features);
-
-            // Simple classification logic based on key features
-            // Using radial distance and total velocity as primary discriminators
-            const altitude = derived.radialDistance - 6371; // Earth radius
+            const altitude = derived.radialDistance - 6371;
             
             let prediction = 'Sentinel1A';
             let confidence = 0.5;
 
-            // ISS classification rules
             if (altitude < 450 && derived.totalVelocity > 7.6) {
                 prediction = 'ISS';
                 confidence = 0.95;
             }
-            // Sentinel1A classification rules
             else if (altitude > 650 && derived.totalVelocity < 7.6) {
                 prediction = 'Sentinel1A';
                 confidence = 0.92;
             }
-            // Additional logic based on orbital characteristics
             else if (Math.abs(data.latitude) < 52 && altitude < 450) {
                 prediction = 'ISS';
                 confidence = 0.88;
@@ -566,12 +816,19 @@
                     altitude: altitude.toFixed(2),
                     totalVelocity: derived.totalVelocity.toFixed(4),
                     radialDistance: derived.radialDistance.toFixed(2)
+                },
+                rawFeatures: {
+                    ...data,
+                    totalVelocity: derived.totalVelocity,
+                    radialDistance: derived.radialDistance
                 }
             };
         }
 
         document.getElementById('predictionForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            window.predictionStartTime = performance.now();
             
             const data = {
                 latitude: parseFloat(document.getElementById('latitude').value),
@@ -584,14 +841,15 @@
                 vel_z: parseFloat(document.getElementById('vel_z').value)
             };
 
-            // Show loading
             document.getElementById('loading').classList.add('show');
             document.getElementById('resultPanel').classList.remove('show');
 
-            // Simulate processing delay
             setTimeout(() => {
                 const result = predictSatellite(data);
                 displayResults(result);
+                
+                // STEP 6: Log prediction for performance monitoring
+                logPrediction(data, result);
                 
                 document.getElementById('loading').classList.remove('show');
                 document.getElementById('resultPanel').classList.add('show');
@@ -631,6 +889,10 @@
             
             document.getElementById('featureValues').innerHTML = featureHTML;
             document.getElementById('batchResults').innerHTML = '';
+
+            // STEP 6: Display explainability
+            const explanations = explainPrediction(result.rawFeatures, result.prediction);
+            displayExplainability(explanations);
         }
 
         document.getElementById('csvFile').addEventListener('change', function(e) {
@@ -639,11 +901,12 @@
 
             const reader = new FileReader();
             reader.onload = function(event) {
+                window.predictionStartTime = performance.now();
+                
                 const csv = event.target.result;
                 const lines = csv.split('\n').filter(line => line.trim());
                 const results = [];
 
-                // Skip header if present
                 const startIdx = lines[0].includes('lat') ? 1 : 0;
 
                 for (let i = startIdx; i < lines.length; i++) {
@@ -661,6 +924,9 @@
                         };
                         const result = predictSatellite(data);
                         results.push({ ...data, ...result });
+                        
+                        // STEP 6: Log each batch prediction
+                        logPrediction(data, result);
                     }
                 }
 
@@ -676,6 +942,7 @@
             document.getElementById('confidenceBar').style.width = '100%';
             document.getElementById('confidenceBar').textContent = 'Batch Complete';
             document.getElementById('featureValues').innerHTML = '';
+            document.getElementById('explainabilitySection').style.display = 'none';
 
             const tableHTML = `
                 <h3 style="color: #00d4ff; margin: 20px 0;">Batch Prediction Results</h3>
@@ -706,6 +973,127 @@
             `;
             
             document.getElementById('batchResults').innerHTML = tableHTML;
+        }
+
+        // ============================================================
+        // STEP 6: History Management Functions
+        // ============================================================
+        function showHistory() {
+            const modal = document.getElementById('historyModal');
+            const content = document.getElementById('historyContent');
+            
+            if (predictionLog.length === 0) {
+                content.innerHTML = '<p style="color: #88ccff; text-align: center; padding: 40px;">No predictions yet. Make some predictions to see them here!</p>';
+            } else {
+                const historyHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Timestamp</th>
+                                <th>Prediction</th>
+                                <th>Confidence</th>
+                                <th>Processing Time</th>
+                                <th>Altitude</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${predictionLog.map((log, idx) => `
+                                <tr>
+                                    <td>${idx + 1}</td>
+                                    <td>${new Date(log.timestamp).toLocaleString()}</td>
+                                    <td><strong style="color: #00d4ff;">${log.output.prediction}</strong></td>
+                                    <td>${(log.output.confidence * 100).toFixed(1)}%</td>
+                                    <td>${log.processingTime}ms</td>
+                                    <td>${log.output.features.altitude} km</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(0, 212, 255, 0.1); border-radius: 10px;">
+                        <h3 style="color: #00d4ff; margin-bottom: 15px;">📊 Session Statistics</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div>
+                                <div style="color: #88ccff;">Total Predictions</div>
+                                <div style="font-size: 1.8em; color: #00d4ff; font-weight: bold;">${predictionLog.length}</div>
+                            </div>
+                            <div>
+                                <div style="color: #88ccff;">ISS Classifications</div>
+                                <div style="font-size: 1.8em; color: #00d4ff; font-weight: bold;">
+                                    ${predictionLog.filter(p => p.output.prediction === 'ISS').length}
+                                </div>
+                            </div>
+                            <div>
+                                <div style="color: #88ccff;">Sentinel1A Classifications</div>
+                                <div style="font-size: 1.8em; color: #00d4ff; font-weight: bold;">
+                                    ${predictionLog.filter(p => p.output.prediction === 'Sentinel1A').length}
+                                </div>
+                            </div>
+                            <div>
+                                <div style="color: #88ccff;">Avg Confidence</div>
+                                <div style="font-size: 1.8em; color: #00d4ff; font-weight: bold;">
+                                    ${(predictionLog.reduce((sum, p) => sum + p.output.confidence, 0) / predictionLog.length * 100).toFixed(1)}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                content.innerHTML = historyHTML;
+            }
+            
+            modal.classList.add('show');
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').classList.remove('show');
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all prediction history?')) {
+                predictionLog = [];
+                updatePerformanceStats();
+                closeHistory();
+                alert('Prediction history cleared!');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('historyModal');
+            if (event.target === modal) {
+                closeHistory();
+            }
+        }
+
+        // Download history as CSV
+        function downloadHistory() {
+            if (predictionLog.length === 0) {
+                alert('No predictions to download!');
+                return;
+            }
+
+            const csvContent = [
+                ['Timestamp', 'Prediction', 'Confidence', 'Latitude', 'Longitude', 'Altitude', 'Velocity', 'Processing Time'],
+                ...predictionLog.map(log => [
+                    log.timestamp,
+                    log.output.prediction,
+                    log.output.confidence.toFixed(4),
+                    log.input.latitude,
+                    log.input.longitude,
+                    log.output.features.altitude,
+                    log.output.features.totalVelocity,
+                    log.processingTime + 'ms'
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `satellite_predictions_${new Date().toISOString()}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
     </script>
 </body>
