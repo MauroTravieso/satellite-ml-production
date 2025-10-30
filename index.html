@@ -469,6 +469,7 @@
             <h1>🛰️ Satellite Trajectory Classification System</h1>
             <p class="subtitle">Advanced ML-Powered Orbital Prediction Engine with Explainability</p>
             <p style="color: #66aacc; margin-top: 10px;">Random Forest Classifier | Accuracy: 100% | F1: 1.0000</p>
+            <p style="color: #66aacc; margin-top: 10px;">Mauro Travieso - Big Data Engineer</p>
         </header>
 
         <div class="main-content">
@@ -477,45 +478,85 @@
                 <form id="predictionForm">
                     <div class="form-group">
                         <label for="latitude">Latitude (degrees)</label>
-                        <input type="number" id="latitude" step="0.0001" required placeholder="e.g., 45.5231">
+                        <input type="number" id="latitude" step="0.0001" required 
+                               min="-90" max="90"
+                               placeholder="e.g., 51.6 (valid: -90 to +90)"
+                               title="Latitude must be between -90° and +90°">
+                        <small style="color: #88ccff; font-size: 0.85em;">Valid range: -90° to +90°</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="longitude">Longitude (degrees)</label>
-                        <input type="number" id="longitude" step="0.0001" required placeholder="e.g., -122.6765">
+                        <input type="number" id="longitude" step="0.0001" required 
+                               min="-180" max="180"
+                               placeholder="e.g., -122.0 (valid: -180 to +180)"
+                               title="Longitude must be between -180° and +180°">
+                        <small style="color: #88ccff; font-size: 0.85em;">Valid range: -180° to +180°</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="x_eci">X Position (ECI km)</label>
-                        <input type="number" id="x_eci" step="0.1" required placeholder="e.g., 7000.5">
+                        <input type="number" id="x_eci" step="0.1" required 
+                               min="-50000" max="50000"
+                               placeholder="e.g., 6771.5"
+                               title="Typical range: -50000 to +50000 km">
+                        <small style="color: #88ccff; font-size: 0.85em;">Earth-Centered Inertial coordinate</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="y_eci">Y Position (ECI km)</label>
-                        <input type="number" id="y_eci" step="0.1" required placeholder="e.g., 2000.3">
+                        <input type="number" id="y_eci" step="0.1" required 
+                               min="-50000" max="50000"
+                               placeholder="e.g., 100.0"
+                               title="Typical range: -50000 to +50000 km">
+                        <small style="color: #88ccff; font-size: 0.85em;">Earth-Centered Inertial coordinate</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="z_eci">Z Position (ECI km)</label>
-                        <input type="number" id="z_eci" step="0.1" required placeholder="e.g., 5000.8">
+                        <input type="number" id="z_eci" step="0.1" required 
+                               min="-50000" max="50000"
+                               placeholder="e.g., 200.0"
+                               title="Typical range: -50000 to +50000 km">
+                        <small style="color: #88ccff; font-size: 0.85em;">Earth-Centered Inertial coordinate</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="vel_x">Velocity X (km/s)</label>
-                        <input type="number" id="vel_x" step="0.01" required placeholder="e.g., 7.5">
+                        <input type="number" id="vel_x" step="0.01" required 
+                               min="-20" max="20"
+                               placeholder="e.g., 7.5"
+                               title="Typical range: -20 to +20 km/s">
+                        <small style="color: #88ccff; font-size: 0.85em;">Orbital velocity component</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="vel_y">Velocity Y (km/s)</label>
-                        <input type="number" id="vel_y" step="0.01" required placeholder="e.g., 2.3">
+                        <input type="number" id="vel_y" step="0.01" required 
+                               min="-20" max="20"
+                               placeholder="e.g., 0.5"
+                               title="Typical range: -20 to +20 km/s">
+                        <small style="color: #88ccff; font-size: 0.85em;">Orbital velocity component</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="vel_z">Velocity Z (km/s)</label>
-                        <input type="number" id="vel_z" step="0.01" required placeholder="e.g., 5.1">
+                        <input type="number" id="vel_z" step="0.01" required 
+                               min="-20" max="20"
+                               placeholder="e.g., 0.3"
+                               title="Typical range: -20 to +20 km/s">
+                        <small style="color: #88ccff; font-size: 0.85em;">Orbital velocity component</small>
                     </div>
                     
                     <button type="submit">🚀 Classify Satellite</button>
+                    <button type="button" onclick="loadSampleData('ISS')" 
+                            style="background: linear-gradient(45deg, #00ff88, #00cc66); margin-top: 10px;">
+                        📝 Load ISS Sample Data
+                    </button>
+                    <button type="button" onclick="loadSampleData('Sentinel1A')" 
+                            style="background: linear-gradient(45deg, #00d4ff, #0099ff); margin-top: 10px;">
+                        📝 Load Sentinel1A Sample Data
+                    </button>
                 </form>
             </div>
 
@@ -770,7 +811,64 @@
             );
         }
 
+        // ============================================================
+        // INPUT VALIDATION FUNCTION
+        // ============================================================
+        function validateInput(data) {
+            const errors = [];
+            
+            // Check required fields
+            const requiredFields = ['latitude', 'longitude', 'x_eci', 'y_eci', 'z_eci', 'vel_x', 'vel_y', 'vel_z'];
+            for (const field of requiredFields) {
+                if (data[field] === undefined || data[field] === null) {
+                    errors.push(`Missing required field: ${field}`);
+                }
+                if (typeof data[field] !== 'number' || isNaN(data[field])) {
+                    errors.push(`Invalid numeric value for: ${field}`);
+                }
+            }
+            
+            // Validate latitude range
+            if (data.latitude !== undefined && (data.latitude < -90 || data.latitude > 90)) {
+                errors.push(`Latitude out of range: ${data.latitude}° (valid: -90° to +90°)`);
+            }
+            
+            // Validate longitude range
+            if (data.longitude !== undefined && (data.longitude < -180 || data.longitude > 180)) {
+                errors.push(`Longitude out of range: ${data.longitude}° (valid: -180° to +180°)`);
+            }
+            
+            // Validate velocity is reasonable (0-10 km/s typical for LEO)
+            if (data.vel_x !== undefined && Math.abs(data.vel_x) > 20) {
+                errors.push(`Velocity X seems unrealistic: ${data.vel_x} km/s (typical: ±10 km/s)`);
+            }
+            if (data.vel_y !== undefined && Math.abs(data.vel_y) > 20) {
+                errors.push(`Velocity Y seems unrealistic: ${data.vel_y} km/s (typical: ±10 km/s)`);
+            }
+            if (data.vel_z !== undefined && Math.abs(data.vel_z) > 20) {
+                errors.push(`Velocity Z seems unrealistic: ${data.vel_z} km/s (typical: ±10 km/s)`);
+            }
+            
+            // Validate ECI coordinates are reasonable (typical: 6000-8000 km from Earth center)
+            const eci_magnitude = Math.sqrt((data.x_eci || 0)**2 + (data.y_eci || 0)**2 + (data.z_eci || 0)**2);
+            if (eci_magnitude < 6371) {
+                errors.push(`ECI position inside Earth! Magnitude: ${eci_magnitude.toFixed(2)} km (min: 6371 km)`);
+            }
+            if (eci_magnitude > 100000) {
+                errors.push(`ECI position too far from Earth: ${eci_magnitude.toFixed(2)} km (typical: 6371-50000 km)`);
+            }
+            
+            return errors;
+        }
+
         function predictSatellite(data) {
+            // CRITICAL: Validate input data first
+            const validationErrors = validateInput(data);
+            if (validationErrors.length > 0) {
+                console.error('❌ Validation failed:', validationErrors);
+                throw new Error('Input validation failed:\n' + validationErrors.join('\n'));
+            }
+            
             const derived = calculateDerivedFeatures(data);
             
             const features = [
@@ -825,6 +923,61 @@
             };
         }
 
+        // ============================================================
+        // SAMPLE DATA LOADERS
+        // ============================================================
+        function loadSampleData(satelliteType) {
+            console.log('Loading sample data for:', satelliteType);
+            
+            const sampleData = {
+                ISS: {
+                    latitude: 51.6,
+                    longitude: -122.0,
+                    x_eci: 6771.5,
+                    y_eci: 100.0,
+                    z_eci: 200.0,
+                    vel_x: 7.66,
+                    vel_y: 0.5,
+                    vel_z: 0.3
+                },
+                Sentinel1A: {
+                    latitude: 98.2,
+                    longitude: 45.0,
+                    x_eci: 7065.0,
+                    y_eci: 500.0,
+                    z_eci: 1000.0,
+                    vel_x: 7.45,
+                    vel_y: -0.5,
+                    vel_z: -0.3
+                }
+            };
+            
+            const data = sampleData[satelliteType];
+            if (!data) {
+                console.error('Unknown satellite type:', satelliteType);
+                return;
+            }
+            
+            // Populate form fields
+            document.getElementById('latitude').value = data.latitude;
+            document.getElementById('longitude').value = data.longitude;
+            document.getElementById('x_eci').value = data.x_eci;
+            document.getElementById('y_eci').value = data.y_eci;
+            document.getElementById('z_eci').value = data.z_eci;
+            document.getElementById('vel_x').value = data.vel_x;
+            document.getElementById('vel_y').value = data.vel_y;
+            document.getElementById('vel_z').value = data.vel_z;
+            
+            // Highlight form to show data was loaded
+            const form = document.getElementById('predictionForm');
+            form.style.background = 'rgba(0, 212, 255, 0.1)';
+            setTimeout(() => {
+                form.style.background = '';
+            }, 1000);
+            
+            console.log('✅ Sample data loaded successfully');
+        }
+
         document.getElementById('predictionForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -841,18 +994,41 @@
                 vel_z: parseFloat(document.getElementById('vel_z').value)
             };
 
+            // Validate form data
+            console.log('Form submitted with data:', data);
+            
+            // Check for HTML5 validation first
+            if (!e.target.checkValidity()) {
+                console.error('❌ Form validation failed');
+                alert('Please check your input values. Make sure all fields are within valid ranges.');
+                return;
+            }
+
             document.getElementById('loading').classList.add('show');
             document.getElementById('resultPanel').classList.remove('show');
 
             setTimeout(() => {
-                const result = predictSatellite(data);
-                displayResults(result);
-                
-                // STEP 6: Log prediction for performance monitoring
-                logPrediction(data, result);
-                
-                document.getElementById('loading').classList.remove('show');
-                document.getElementById('resultPanel').classList.add('show');
+                try {
+                    const result = predictSatellite(data);
+                    const processingTime = performance.now() - window.predictionStartTime;
+                    
+                    displayResults(result);
+                    
+                    // STEP 6: Log prediction for performance monitoring
+                    logPrediction(data, result, processingTime);
+                    
+                    document.getElementById('loading').classList.remove('show');
+                    document.getElementById('resultPanel').classList.add('show');
+                    
+                    console.log('✅ Prediction completed successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Prediction error:', error);
+                    document.getElementById('loading').classList.remove('show');
+                    
+                    // Show user-friendly error message
+                    alert('❌ Prediction Failed\n\n' + error.message + '\n\nPlease check your input values and try again.');
+                }
             }, 1000);
         });
 
