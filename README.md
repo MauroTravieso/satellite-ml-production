@@ -14,6 +14,7 @@
 
 ---
 
+![Satellite3D System](/assets/images/output.gif)
 ![Satellite System](/assets/images/satellites.gif)
 
 ---
