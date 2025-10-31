@@ -14,7 +14,7 @@
 
 ---
 
-- Satellites' LEO orbits
+- Satellites' LEO
 ![Satellite3D System](/assets/images/output.gif)
 
 - Equirectangular trajectories
